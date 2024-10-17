@@ -1,0 +1,35 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Ticket {
+  id        String   @id @default(uuid())
+  subject   String
+  threadId  String   @unique
+  status    String
+  priority  String
+  assignee  User?    @relation(fields: [assigneeId], references: [id])
+  assigneeId String?
+  createdAt DateTime @default(now())
+  messages  Message[]
+}
+
+model User {
+  id    String  @id @default(uuid())
+  name  String
+  email String
+  tickets Ticket[]
+}
+
+model Message {
+  id        String  @id @default(uuid())
+  ticketId  String
+  ticket    Ticket  @relation(fields: [ticketId], references: [id])
+  content   String
+  createdAt DateTime @default(now())
+}

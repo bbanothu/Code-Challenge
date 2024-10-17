@@ -1,0 +1,27 @@
+{
+  "name": "ticket-support-worker",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "ts-node src/worker.ts",
+    "migrate": "prisma migrate dev",
+    "generate": "prisma generate"
+  },
+  "dependencies": {
+    "@prisma/client": "^3.0.0",
+    "@temporalio/client": "^1.0.0",
+    "@temporalio/worker": "^1.0.0",
+    "dotenv": "^10.0.0",
+    "express": "^4.21.1",
+    "nylas": "^5.0.0",
+    "ts-node": "^10.0.0",
+    "typescript": "^4.0.0"
+  },
+  "devDependencies": {
+    "@swc/core": "^1.7.36",
+    "@types/express": "^5.0.0",
+    "nodemon": "^2.0.22",
+    "prisma": "^3.0.0",
+    "swc-loader": "^0.2.6",
+    "ts-loader": "^9.5.1"
+  }
+}

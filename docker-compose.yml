@@ -2,34 +2,70 @@ version: "3"
 
 services:
   postgres:
-    image: matthieuberger/postgres-multi-db:14-alpine
+    image: postgres:14-alpine
     ports:
       - 5432:5432
-    volumes:
-      - ./tmp/postgres:/var/lib/postgresql/data
     environment:
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=password
-      - POSTGRES_MULTIPLE_DATABASES=platform
+      - POSTGRES_PASSWORD=login
+      - POSTGRES_DB=platform
+    volumes:
+      - ./tmp/postgres:/var/lib/postgresql/data
+    networks:
+      - mentium-net
 
   temporal:
-    restart: on-failure:3 
+    stop_grace_period: 30s
     build:
       context: ./temporal
-      dockerfile: Dockerfile
     ports:
       - 7233:7233
       - 8233:8233
+      - 4000:4000
     volumes:
-      - ./tmp/teamporal:/usr/temporal/
+      - ./tmp/temporal:/usr/temporal
+    environment:
+      - PORT=4000
+      - NYLAS_API_URI=https://api.us.nylas.com
+      - NYLAS_API_KEY=REMOVED
+      - DATABASE_URL=postgresql://postgres:login@postgres:5432/platform
+      - TEMPORAL_ADDRESS=localhost:7233
+      - ENV TEMPORAL_DISABLE_SWC=true
+    depends_on:
+      - postgres
+    command: sh -c "npx prisma migrate deploy && /usr/src/app/start.sh"
+    networks:
+      - mentium-net
 
-  # API service
-  # api: ...
+  worker:
+    build:
+      context: ./worker
+    environment:
+      - PORT=4000
+      - NYLAS_API_URI=https://api.us.nylas.com
+      - NYLAS_API_KEY=REMOVED
+      - TEMPORAL_ADDRESS=temporal:7233 
+      - DATABASE_URL=postgresql://postgres:login@postgres:5432/platform
+      - ENV TEMPORAL_DISABLE_SWC=true
 
-  # Email worker service
-  # email-worker:...
+    depends_on:
+      - temporal
+    networks:
+      - mentium-net
+
+  webapp:
+    build:
+      context: ./webapp
+    ports:
+      - 5173:5173
+    volumes:
+      - ./webapp:/usr/src/app
+    command: ["npm", "start"]
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    networks:
+      - mentium-net
 
 networks:
-  default:
+  mentium-net:
     driver: bridge
-    name: mentium-net
